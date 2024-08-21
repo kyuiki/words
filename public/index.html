@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Game</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f0f0;
+            --text-color: #000000;
+            --tile-color: #ffffff;
+            --tile-border-color: #000000;
+            --key-bg-gradient-start: #4facfe;
+            --key-bg-gradient-end: #00f2fe;
+            --key-text-color: #000000;
+            --present-color: #b59f3b;
+            --button-shadow: #000000;
+            --timer-gradient-start: #4facfe;
+            --timer-gradient-end: #00f2fe;
+        }
+
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: "Roboto", Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            flex-direction: column;
+            padding-top: 4rem;
+        }
+
+        main {
+            width: min(90vw, 30rem);
+            display: grid;
+            gap: 1rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            background-color: var(--tile-color);
+            padding: 0.5rem 1rem;
+            border: 4px solid var(--text-color);
+            box-shadow: 10px 10px 0 var(--button-shadow);
+            transition: all 400ms cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        header:hover {
+            transform: translateY(5px);
+            box-shadow: 5px 5px 0 var(--button-shadow);
+        }
+
+        #timebar {
+            position: relative;
+            display: flex;
+            width: 120px;
+            height: 24px;
+            background-color: var(--bg-color);
+            overflow: hidden;
+            border: 2px solid var(--text-color);
+        }
+
+        #timebar::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, var(--timer-gradient-start), var(--timer-gradient-end));
+            scale: var(--progress, 1) 1;
+            transform-origin: left;
+            transition: scale 0.5s linear;
+        }
+
+        #timebar i {
+            align-self: center;
+            position: relative;
+            z-index: 3;
+            color: var(--text-color);
+            margin-left: 8px;
+            font-size: 0.9rem;
+        }
+
+        .score-wrap {
+            display: flex;
+            align-items: center;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 4px 10px;
+            font-size: 0.9rem;
+            border: 2px solid var(--text-color);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .score-wrap i {
+            margin-right: 5px;
+        }
+
+        #score {
+            min-width: 3ch;
+            text-align: right;
+            display: inline-block;
+        }
+
+        .word-container {
+            background-color: var(--bg-color);
+            padding: 1rem;
+            border: 4px solid var(--text-color);
+            box-shadow: 10px 10px 0 var(--button-shadow);
+            transition: all 400ms cubic-bezier(0.23, 1, 0.32, 1);
+            position: relative;
+        }
+
+        .word-container:hover {
+            transform: translateY(5px);
+            box-shadow: 5px 5px 0 var(--button-shadow);
+        }
+
+        #word-input {
+            width: 100%;
+            outline: none;
+            border: 3px solid var(--text-color);
+            padding: 15px;
+            font-size: 18px;
+            background: var(--tile-color);
+            color: var(--text-color);
+            transition: all 400ms cubic-bezier(0.23, 1, 0.32, 1);
+            position: relative;
+            z-index: 3;
+            font-family: "Roboto", Arial, sans-serif;
+            letter-spacing: -0.5px;
+        }
+
+        #word-input::placeholder {
+            color: #666;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        #word-input:hover,
+        #word-input:focus {
+            background: var(--bg-color);
+            transform: translateY(-5px);
+            box-shadow: 0 5px 0 0 var(--text-color);
+        }
+
+        .word-list {
+            list-style-type: none;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .word-list li {
+            background-color: var(--tile-color);
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            width: 100%;
+            position: relative;
+            border: 2px solid var(--text-color);
+        }
+
+        .word-list li::after {
+            content: attr(data-points);
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(45deg, var(--key-bg-gradient-start), var(--key-bg-gradient-end));
+            color: var(--key-text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.8rem;
+            border: 2px solid var(--text-color);
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+
+        #submit-button {
+            cursor: pointer;
+            border: 3px solid var(--text-color);
+            background: linear-gradient(45deg, var(--key-bg-gradient-start), var(--key-bg-gradient-end));
+            color: var(--key-text-color);
+            transition: all 400ms cubic-bezier(0.23, 1, 0.32, 1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            position: relative;
+            z-index: 3;
+            font-weight: bold;
+            text-transform: uppercase;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        #submit-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 0 0 var(--text-color);
+        }
+
+        .button-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+            transition: transform 0.2s ease-out;
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            text-align: center;
+        }
+
+        #submit-button:hover .button-text {
+            transform: skew(-5deg);
+        }
+
+        #submit-button:active .button-text {
+            transform: skew(5deg);
+        }
+
+        .button-text span:first-child {
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        .button-text span:last-child {
+            font-size: 16px;
+            text-transform: uppercase;
+        }
+
+        @keyframes pointsFlyIn {
+            0% {
+                opacity: 0;
+                transform: translate(0, 20px);
+            }
+            10% {
+                opacity: 1;
+                transform: translate(0, 0);
+            }
+            90% {
+                opacity: 1;
+                transform: translate(0, 0);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(0, -20px);
+            }
+        }
+
+        .points-animation {
+            position: absolute;
+            right: -40px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-weight: bold;
+            color: var(--present-color);
+            animation: pointsFlyIn 1.5s ease-out;
+            pointer-events: none;
+        }
+
+        #game-over-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        #game-over-screen.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .game-over-content {
+            background-color: var(--tile-color);
+            padding: 2rem;
+            border: 4px solid var(--text-color);
+            box-shadow: 10px 10px 0 var(--button-shadow);
+            text-align: center;
+            max-width: 90%;
+            width: 400px;
+        }
+
+        .game-over-title {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--text-color);
+        }
+
+        .final-score {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: var(--text-color);
+        }
+
+        .replay-button {
+            cursor: pointer;
+            border: 3px solid var(--text-color);
+            background: linear-gradient(45deg, var(--key-bg-gradient-start), var(--key-bg-gradient-end));
+            color: var(--key-text-color);
+            transition: all 400ms cubic-bezier(0.23, 1, 0.32, 1);
+            display: inline-block;
+            padding: 10px 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-top: 1rem;
+        }
+
+        .replay-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 0 0 var(--text-color);
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <header>
+            <output id="timebar">
+                <i class="fa-regular fa-clock"></i>
+            </output>
+            <div class="score-wrap">
+                <i class="fa-solid fa-star"></i>
+                <output id="score">0</output>
+            </div>
+        </header>
+
+        <form id="word-form" class="word-container">
+            <input id="word-input" type="text" placeholder="Type a word (6+ letters)" required autocomplete="off" />
+            <button id="submit-button" type="submit">
+                <div class="button-text">
+                    <span>Submit</span>
+                    <span>Word</span>
+                </div>
+            </button>
+        </form>
+
+        <ul id="word-list" class="word-list"></ul>
+    </main>
+
+    <div id="game-over-screen">
+        <div class="game-over-content">
+            <h2 class="game-over-title">Game Over!</h2>
+            <div class="final-score">Score: <span id="final-score"></span></div>
+            <button class="replay-button" onclick="restartGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const wordForm = document.getElementById('word-form');
+        const wordInput = document.getElementById('word-input');
+        const wordList = document.getElementById('word-list');
+        const scoreDisplay = document.getElementById('score');
+        const timebar = document.getElementById('timebar');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const finalScoreDisplay = document.getElementById('final-score');
+
+        let score = 0;
+        let timeLeft = 60; // 60 seconds game duration
+
+        function updateScore(points) {
+            score += points;
+            scoreDisplay.textContent = score;
+        }
+
+        function updateTimebar() {
+            const progress = timeLeft / 60;
+            timebar.style.setProperty('--progress', progress);
+        }
+
+        function startTimer() {
+            const timer = setInterval(() => {
+                timeLeft--;
+                updateTimebar();
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function endGame() {
+            gameOverScreen.classList.add('visible');
+            finalScoreDisplay.textContent = score;
+        }
+
+        function restartGame() {
+            score = 0;
+            timeLeft = 60;
+            scoreDisplay.textContent = '0';
+            wordList.innerHTML = '';
+            gameOverScreen.classList.remove('visible');
+            updateTimebar();
+            startTimer();
+        }
+
+        wordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const word = wordInput.value.trim().toLowerCase();
+
+            if (word.length < 6) {
+                alert('Word must be at least 6 letters long!');
+                return;
+            }
+
+            const response = await fetch('/check-word', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ word }),
+            });
+
+            const { isValid } = await response.json();
+
+            if (isValid) {
+                const points = word.length;
+                updateScore(points);
+
+                const listItem = document.createElement('li');
+                listItem.textContent = word;
+                listItem.setAttribute('data-points', points);
+                wordList.prepend(listItem);
+
+                const pointsAnimation = document.createElement('span');
+                pointsAnimation.textContent = `+${points}`;
+                pointsAnimation.classList.add('points-animation');
+                listItem.appendChild(pointsAnimation);
+
+                wordInput.value = '';
+            } else {
+                alert('Invalid word! Try again.');
+            }
+        });
+
+        // Start the game
+        startTimer();
+    </script>
+</body>
+</html>
